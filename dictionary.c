@@ -15,45 +15,49 @@
 #include <string.h>
 #include <stdlib.h>
 #include "dictionary.h"
-
+//#define LENGTH 45
+#define DSIZE 26 
 
 /* Node Maker */
 typedef struct node
 {
-    char word[LENGTH + 1];
+    char word[46];
     struct node *next;
 }node;
     
 /* make hash table */
-struct node hash_table[SIZE];
+node *hash_table[DSIZE];
 
-int key(const char* );
-char dline[46];
-char *dword;
-int dwordcount = 0;
-char c;
+
+
+int key(const char*);
+char dline[LENGTH + 1];
+
+double dwordcount = 0;
+
 int dindex = 0;
 /**
  * Returns true if word is in dictionary else false.
  */
 bool check(const char* word)
 {
-    // TODO
-
-    /* prep word for case insensitivity */
-    char test[46];
-    for (int i =0; i < 45; i++)
-    {
-        test[i] = tolower(word[i]);
-    }
     
-    /* run word through hash_key to find bucket */
+    int len = strlen(word);
+    char test[len + 1];
+    int i;
+    for( i = 0; i < len; i++)
+    {
+        test[i] = tolower(word[i]);    
+    }
+   // i++;
+    test[i] = '\0';
+    // run word through hash_key to find bucket
     dindex = key(test);
     
-    /* check nodes in bucket for word with strcmp until true or NULL */
+    // check nodes in bucket for word with strcmp until true or NULL
     int compare;
     
-    node *cursor = &hash_table[dindex];
+    node *cursor = hash_table[dindex];
 
     while (cursor != NULL)
     {
@@ -72,40 +76,38 @@ bool check(const char* word)
  */
 bool load(const char* dictionary)
 {
-    /* declare a file pointer */
-    FILE *dfp = NULL;
-    
-    /* open an existing file for reading */
-    dfp = fopen(dictionary, "r");
-    
+    /* declare a file pointer open an existing file for reading*/
+    FILE *dfp = fopen(dictionary, "r");
+
     /* Check DICTIONARY file */
     if (dfp != NULL)
     {
         /* scan in words to hashtable */
+        int c;
         while (!feof(dfp))
         {
-
-            /* get the next word from file */
-            node* new_node = malloc(sizeof(node));
-            fscanf(dfp, "%s", new_node->word);
-            
+            node *new_node = malloc(sizeof(node));
+            int i = 0;
+            while ((c = fgetc(dfp))!= '\n')
+            { 
+                if(c <= 0)
+                {
+                    break;    
+                }
+                new_node->word[i] = c;
+                i++;
+            }
+            new_node->word[i] = '\0';
+  
             /* Hash function*/
-            /* add up all the chars and modulo by x to get a key*/
             dindex = key(new_node->word);
         
             /* place new node in hash table */
-            if (hash_table[dindex].next == NULL)
-            {
-                hash_table[dindex] = *new_node;
-            }
-            else
-            {
-                new_node->next = &hash_table[dindex];
-                hash_table[dindex] = *new_node;
-            }
-            dwordcount++;
+            new_node->next = hash_table[dindex];
+            hash_table[dindex] = new_node;
 
-        }
+            dwordcount++;
+      } 
             fclose(dfp);
             return true; 
     }     
@@ -117,31 +119,27 @@ bool load(const char* dictionary)
  */
 unsigned int size(void)
 {
-    //
-    if (load)
-    {
         return dwordcount;
-    }
-    return 0;
 }
 /**
  * Unloads dictionary from memory.  Returns true if successful else false.
  */
 bool unload(void)
 {
-    //
-    node* temp = malloc(sizeof(node));
-    
-    for(int i = SIZE; i > 0; i--)
+   
+    for(int i = 0; i <= DSIZE; i++)
     { 
-        while(hash_table[i].next != NULL)
+        node *cursor = hash_table[i];
+        
+        while(cursor != NULL)
         {
-            temp = &hash_table[i];
-            hash_table[i] = *hash_table[i].next;
-            free(temp);
-        }
-           
+        node *temp = cursor;
+        cursor = cursor->next;
+        free(temp);
+
+        }   
     }
+  
     return true;
 }
 
@@ -149,10 +147,10 @@ bool unload(void)
 
 int key(const char* word)
 {
-    int n = (((int)word[0]) + ((int)word[1]) + ((int)word[2]) + ((int)word[3])
-            + ((int)word[4]) + ((int)word[5]) + ((int)word[6]) + ((int)word[7])
-            + ((int)word[8]) + ((int)word[9]) + ((int)word[10])); 
-
-     dindex = n % (SIZE); //dindex = n & (SIZE - 1); to speed things up a bit
-     return n;
+/*    int n = (((int)word[0]<<2) + ((int)word[1]<<1) + ((int)word[2]<<2) + ((int)word[3]) + ((int)word[3])*/
+/*            + ((int)word[4]) + ((int)word[5])+ ((int)word[4]) + ((int)word[5]) + ((int)word[6]) + ((int)word[7])*/
+/*            + ((int)word[8]) + ((int)word[9]<<3) + ((int)word[10])); */
+    int n = (int)word[0] -'a';
+     dindex = n % (DSIZE); //dindex = n & (DSIZE - 1); to speed things up a bit
+     return dindex;
 }
